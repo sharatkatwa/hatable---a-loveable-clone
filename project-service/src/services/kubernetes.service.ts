@@ -62,7 +62,7 @@ export async function createService(serviceName: string, podName: string) {
       },
       ports: [
         {
-          name: "http",
+          protocol: "TCP",
           port: 80,
           targetPort: 3000,
         },

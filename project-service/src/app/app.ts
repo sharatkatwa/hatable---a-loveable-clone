@@ -8,7 +8,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 // routes
-app.use("/api/project", router);
+app.use("/api/projects", router);
 
 app.use("/_status/healthz", (req, res) => {
   res.status(200).json({ message: "server is healthy" });

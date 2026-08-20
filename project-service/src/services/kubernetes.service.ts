@@ -6,14 +6,14 @@ kc.loadFromDefault();
 
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-export async function createPod() {
+export async function createPod(podName: string) {
   const podManifest: k8s.V1Pod = {
     apiVersion: "v1",
     kind: "Pod",
     metadata: {
-      name: "nextjs-pod",
+      name: podName,
       labels: {
-        app: "nextjs",
+        app: podName,
       },
     },
     spec: {
@@ -42,6 +42,40 @@ export async function createPod() {
     body: podManifest,
   });
 
-  console.log('Pod created successfully 💚 ')
-  console.log(res)
+  console.log("Pod created successfully 💚 ");
+  console.log(res);
+}
+
+export async function createService(serviceName: string, podName: string) {
+  const serviceManifest: k8s.V1Service = {
+    apiVersion: "v1",
+    kind: "Service",
+    metadata: {
+      name: serviceName,
+      labels: {
+        app: podName,
+      },
+    },
+    spec: {
+      selector: {
+        app: podName,
+      },
+      ports: [
+        {
+          name: "http",
+          port: 80,
+          targetPort: 3000,
+        },
+      ],
+      type: "LoadBalancer",
+    },
+  };
+
+  const res = await k8sApi.createNamespacedService({
+    namespace: "default",
+    body: serviceManifest,
+  });
+
+  console.log("Service created successfully 💚 ");
+  console.log(res);
 }

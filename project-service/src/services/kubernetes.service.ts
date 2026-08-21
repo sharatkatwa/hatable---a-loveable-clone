@@ -160,7 +160,7 @@ export async function createService(serviceName: string, podName: string) {
           targetPort: 8080,
         },
       ],
-      type: "LoadBalancer",
+      type: "ClusterIP",
     },
   };
 

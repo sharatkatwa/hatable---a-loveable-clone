@@ -6,10 +6,32 @@ import express, {
 } from "express";
 import router from "./index.routes.js";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import { onPreviewReaped, recordActivity } from "../services/activity.service.js";
 
 const app = express();
 
+
+const proxyMap: { [key: string]: Function } = {};
+
+onPreviewReaped((uniqueId)=>{
+  delete proxyMap[uniqueId]
+})
+
 app.use(morgan("dev"));
+
+function getProxy(uniqueId: string) {
+  if (proxyMap[uniqueId]) {
+    return proxyMap[uniqueId];
+  }
+  const targetUrl = `http://nextjs-service-${uniqueId}`;
+  const proxyMiddleware = createProxyMiddleware({
+    target: targetUrl,
+    changeOrigin: true,
+    pathRewrite: { "^": "/" },
+  });
+  proxyMap[uniqueId] = proxyMiddleware;
+  return proxyMiddleware;
+}
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   const host = req.headers.host || "";
@@ -22,18 +44,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     return next();
   }
   const uniqueId = subdomain[0];
-  const targetUrl = `http://nextjs-service-${uniqueId}`;
-  const proxyMiddleware = createProxyMiddleware({
-    target: targetUrl,
-    changeOrigin: true,
-    pathRewrite: { "^/": "/" },
-  });
+  if (!uniqueId) {
+    return res.status(400).json({ message: "Invalid preview URL provided." });
+  }
+  void recordActivity(uniqueId)
+  const proxyMiddleware = getProxy(uniqueId);
 
   return proxyMiddleware(req, res, next);
 });
 
 app.use(express.json());
-
 
 // routes
 app.use("/api/projects", router);

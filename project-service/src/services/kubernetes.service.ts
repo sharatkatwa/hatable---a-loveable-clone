@@ -6,6 +6,42 @@ kc.loadFromDefault();
 
 const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
+function isNotFound(error: unknown) {
+  return (error as { code?: number })?.code === 404;
+}
+
+// delete k8s pod
+export async function deletePod(podName: string) {
+  try {
+    await k8sApi.deleteNamespacedPod({
+      name: podName,
+      namespace: "default",
+    });
+    console.log(`${podName} pod deleted successfully 🗑️ `);
+    return {
+      status: "success",
+      message: "Pod deleted successfully",
+    };
+  } catch (error) {
+    if (isNotFound(error)) return;
+    throw error;
+  }
+}
+
+// delete k8s service
+export async function deleteService(serviceName: string) {
+  try {
+    await k8sApi.deleteNamespacedService({
+      namespace: "default",
+      name: serviceName,
+    });
+    console.log(`Service ${serviceName} deleted`);
+  } catch (error) {
+    if (isNotFound(error)) return;
+    throw error;
+  }
+}
+
 export async function createPod(podName: string) {
   const podManifest: k8s.V1Pod = {
     apiVersion: "v1",
